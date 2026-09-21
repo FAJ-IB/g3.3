@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IB Digital Society: Cyber Drone Defense - Topic 3.3</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #030712;
+            color: #f3f4f6;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Glassmorphism Styling */
+        .glass-panel {
+            background: rgba(8, 15, 30, 0.88);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(0, 240, 255, 0.35);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        /* Neon Glow Effects */
+        .neon-text-cyan {
+            color: #00f0ff;
+            text-shadow: 0 0 12px rgba(0, 240, 255, 0.7);
+        }
+
+        .neon-border-cyan {
+            border-color: #00f0ff;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+        }
+
+        /* Uniform Target Drone Button Styling */
+        .drone-btn {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(8, 15, 30, 0.98));
+            border: 2px solid #00f0ff;
+            color: #f3f4f6;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+            transition: all 0.2s ease-out;
+        }
+
+        .drone-btn:hover, .drone-btn:active {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.35), rgba(15, 23, 42, 0.98));
+            border-color: #38bdf8;
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.8);
+            transform: translateY(-2px) scale(1.01);
+        }
+
+        /* Scanlines Overlay */
+        .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 0, 0, 0.35) 50%,
+                rgba(0, 0, 0, 0.35)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(3, 7, 18, 0.9);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00f0ff;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #38bdf8;
+        }
+
+        canvas {
+            display: block;
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="relative w-screen h-screen bg-slate-950 text-slate-100 flex flex-col justify-between overflow-hidden">
+
+    <div class="scanlines absolute inset-0 z-10 pointer-events-none opacity-40"></div>
+
+    <header class="relative z-20 w-full px-4 py-3 glass-panel border-b border-cyan-500/40 flex flex-wrap items-center justify-between gap-2 shadow-lg">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-cyan-950/80 rounded-lg border border-cyan-500/60 text-cyan-400">
+                <i data-lucide="crosshair" class="w-6 h-6 animate-spin" style="animation-duration: 8s;"></i>
+            </div>
+            <div>
+                <h1 class="font-orbitron font-extrabold text-base sm:text-lg text-cyan-300 tracking-wider flex items-center gap-2">
+                    CYBER DRONE DEFENSE
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">IB Topic 3.3</span>
+                </h1>
+                <p class="text-xs text-slate-400 flex items-center gap-1">
+                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    Author: <span class="text-cyan-300 font-semibold">Teacher Fara</span> | Digital Society Diploma
+                </p>
+            </div>
+        </div>
+
+        <!-- HUD Dynamic Stats -->
+        <div id="hud-stats" class="hidden sm:flex items-center gap-4 text-sm font-orbitron">
+            <div class="px-3 py-1.5 rounded-lg glass-card border border-cyan-500/30 flex items-center gap-2">
+                <i data-lucide="target" class="w-4 h-4 text-cyan-400"></i>
+                <span class="text-slate-400 text-xs">TARGETS:</span>
+                <span id="hud-progress" class="text-cyan-300 font-bold">1/15</span>
+            </div>
+            <div class="px-3 py-1.5 rounded-lg glass-card border border-cyan-500/30 flex items-center gap-2">
+                <i data-lucide="shield" class="w-4 h-4 text-amber-400"></i>
+                <span class="text-slate-400 text-xs">SCORE:</span>
+                <span id="hud-score" class="text-amber-300 font-bold">0</span>
+            </div>
+            <div class="px-3 py-1.5 rounded-lg glass-card border border-cyan-500/30 flex items-center gap-2">
+                <i data-lucide="zap" class="w-4 h-4 text-cyan-400"></i>
+                <span class="text-slate-400 text-xs">STREAK:</span>
+                <span id="hud-streak" class="text-cyan-300 font-bold">0x</span>
+            </div>
+        </div>
+    </header>
+
+    <div id="start-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
+        <div class="max-w-2xl w-full glass-panel rounded-2xl p-6 sm:p-8 border border-cyan-500/50 shadow-2xl relative">
+            <div class="text-center mb-6">
+                <div class="inline-flex p-4 rounded-full bg-cyan-950/80 border-2 border-cyan-400 mb-3 text-cyan-300 shadow-lg shadow-cyan-500/40">
+                    <i data-lucide="bot" class="w-12 h-12"></i>
+                </div>
+                <h2 class="font-orbitron font-black text-2xl sm:text-3xl text-cyan-300 tracking-wide">
+                    IB DIGITAL SOCIETY DRONE DEFENSE
+                </h2>
+                <p class="text-sm text-cyan-400 font-semibold mt-1">Topic 3.3 Computing Devices Assessment</p>
+                <div class="inline-block mt-2 px-3 py-1 rounded-full bg-slate-800 text-xs text-slate-300 border border-slate-700">
+                    Curriculum Authored by <span class="text-cyan-300 font-bold">Teacher Fara</span>
+                </div>
+            </div>
+
+            <div class="space-y-3 text-slate-300 text-sm leading-relaxed mb-6">
+                <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                    <h3 class="font-orbitron text-xs text-cyan-400 font-bold tracking-wider uppercase flex items-center gap-2">
+                        <i data-lucide="crosshair" class="w-4 h-4"></i> Tactical Mission Protocol
+                    </h3>
+                    <ul class="list-disc list-inside space-y-1.5 text-slate-300">
+                        <li>Read the IB scenario question presented on the tactical HUD.</li>
+                        <li>Identify the target drone hovering in the airspace that holds the <strong class="text-cyan-300">CORRECT ANSWER</strong>.</li>
+                        <li><strong class="text-cyan-300">Direct Click / Tap:</strong> Click directly on the flying drone on screen or tap its matching option panel below to lock on and fire your laser cannon!</li>
+                        <li><strong class="text-amber-300">Pure Assessment Challenge:</strong> Subtopic names and color hints are masked! All drones carry uniform neon styling.</li>
+                        <li>Answering all 15 questions completes the mission and unlocks <strong class="text-cyan-300">Teacher Fara's Master Revision Matrix</strong> for post-game review.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <button id="btn-start-game" class="w-full py-4 rounded-xl font-orbitron font-bold text-lg text-slate-950 bg-gradient-to-r from-cyan-400 via-sky-400 to-teal-300 hover:from-cyan-300 hover:to-teal-200 transition shadow-lg shadow-cyan-500/30 flex items-center justify-center gap-3 cursor-pointer">
+                <i data-lucide="play" class="w-6 h-6"></i> INITIATE DRONE INTERCEPTION
+            </button>
+        </div>
+    </div>
+
+    <main class="relative flex-1 w-full h-full flex flex-col justify-between overflow-hidden">
+        
+        <!-- Interactive 2D Canvas for Drones, Sky & Laser Canon -->
+        <canvas id="game-canvas" class="absolute inset-0 w-full h-full z-0 cursor-crosshair"></canvas>
+
+        <!-- Question Display Card -->
+        <div class="relative z-20 w-full max-w-4xl mx-auto p-3 sm:p-4">
+            <div id="question-card" class="glass-panel rounded-2xl p-4 sm:p-5 border border-cyan-500/40 shadow-2xl relative transition-all duration-300">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <span id="question-badge" class="font-orbitron text-xs px-3 py-1 rounded-full bg-cyan-950/90 text-cyan-300 border border-cyan-500/50 font-semibold tracking-wider">
+                        TARGET DRONE 1 OF 15
+                    </span>
+                    <span class="text-xs text-slate-400 font-medium tracking-wide">
+                        IB Digital Society • Standard Level & Higher Level
+                    </span>
+                </div>
+                <h2 id="question-text" class="text-base sm:text-lg font-semibold text-slate-100 leading-snug">
+                    Initializing target telemetry...
+                </h2>
+            </div>
+        </div>
+
+        <!-- Drone Option Cards / Touch Target Buttons -->
+        <div class="relative z-20 w-full max-w-5xl mx-auto p-3 sm:p-4 mb-2">
+            <p class="text-center text-xs text-cyan-300/80 font-orbitron mb-2 tracking-widest uppercase flex items-center justify-center gap-2">
+                <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> Click any floating drone above or tap an option panel below to fire laser cannon
+            </p>
+            
+            <div id="options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button class="drone-btn p-3.5 sm:p-4 rounded-xl text-left flex items-start gap-3 text-sm sm:text-base font-semibold transition cursor-pointer" data-index="0">
+                    <span class="font-orbitron font-extrabold text-cyan-400 px-2.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-700/60 shrink-0">DRONE A</span>
+                    <span class="option-text text-slate-200">Option A</span>
+                </button>
+                <button class="drone-btn p-3.5 sm:p-4 rounded-xl text-left flex items-start gap-3 text-sm sm:text-base font-semibold transition cursor-pointer" data-index="1">
+                    <span class="font-orbitron font-extrabold text-cyan-400 px-2.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-700/60 shrink-0">DRONE B</span>
+                    <span class="option-text text-slate-200">Option B</span>
+                </button>
+                <button class="drone-btn p-3.5 sm:p-4 rounded-xl text-left flex items-start gap-3 text-sm sm:text-base font-semibold transition cursor-pointer" data-index="2">
+                    <span class="font-orbitron font-extrabold text-cyan-400 px-2.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-700/60 shrink-0">DRONE C</span>
+                    <span class="option-text text-slate-200">Option C</span>
+                </button>
+                <button class="drone-btn p-3.5 sm:p-4 rounded-xl text-left flex items-start gap-3 text-sm sm:text-base font-semibold transition cursor-pointer" data-index="3">
+                    <span class="font-orbitron font-extrabold text-cyan-400 px-2.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-700/60 shrink-0">DRONE D</span>
+                    <span class="option-text text-slate-200">Option D</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="review-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-3 sm:p-6 bg-slate-950/95 backdrop-blur-xl">
+        <div class="max-w-4xl w-full h-full max-h-[90vh] glass-panel rounded-2xl border border-cyan-500/50 shadow-2xl flex flex-col overflow-hidden">
+            
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-cyan-500/30 bg-slate-900/90 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h2 class="font-orbitron font-black text-xl sm:text-2xl text-cyan-300 flex items-center gap-2">
+                        <i data-lucide="award" class="w-7 h-7 text-amber-400"></i> MISSION COMPLETE: REVISION MATRIX
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                        IB Digital Society • Topic 3.3 Computing Devices | Author: <span class="text-cyan-300 font-bold">Teacher Fara</span>
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="btn-restart" class="px-4 py-2 rounded-xl bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-300 font-orbitron text-xs font-bold transition flex items-center gap-2 cursor-pointer">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> RESTART DRONE DEFENSE
+                    </button>
+                </div>
+            </div>
+
+            <!-- Score Summary Banner -->
+            <div class="p-4 bg-slate-900/60 border-b border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <div class="p-3 rounded-xl bg-slate-950/80 border border-cyan-900">
+                    <p class="text-xs text-slate-400 font-orbitron">FINAL SCORE</p>
+                    <p id="summary-score" class="text-xl sm:text-2xl font-bold font-orbitron text-cyan-300">0</p>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-950/80 border border-cyan-900">
+                    <p class="text-xs text-slate-400 font-orbitron">ACCURACY</p>
+                    <p id="summary-accuracy" class="text-xl sm:text-2xl font-bold font-orbitron text-emerald-400">0%</p>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-950/80 border border-cyan-900">
+                    <p class="text-xs text-slate-400 font-orbitron">TARGETS NEUTRALIZED</p>
+                    <p id="summary-correct" class="text-xl sm:text-2xl font-bold font-orbitron text-amber-300">0/15</p>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-950/80 border border-cyan-900">
+                    <p class="text-xs text-slate-400 font-orbitron">ESTIMATED IB GRADE</p>
+                    <p id="summary-grade" class="text-xl sm:text-2xl font-bold font-orbitron text-cyan-400">Level 7</p>
+                </div>
+            </div>
+
+            <!-- Detailed Revision Cards -->
+            <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" id="review-list-container">
+                <!-- Dynamically populated by JavaScript -->
+            </div>
+
+            <!-- Footer Note -->
+            <div class="p-4 bg-slate-900/90 border-t border-slate-800 text-center text-xs text-slate-400 flex flex-wrap items-center justify-between gap-2">
+                <span class="flex items-center gap-1.5">
+                    <i data-lucide="book-open" class="w-4 h-4 text-cyan-400"></i>
+                    Study Tip: Review missed concept explanations before sitting for the IB exam.
+                </span>
+                <span class="text-cyan-400 font-medium">Curriculum Authored by Teacher Fara</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * IB DIGITAL SOCIETY TOPIC 3.3 COMPUTING DEVICES QUESTION BANK
+         * Authored by Teacher Fara for IB Diploma Candidates
+         * Covers all 15 required subtopic concepts without disclosing subtopic hints.
+         */
+        const questionsData = [
+            {
+                id: 1,
+                concept: "Computer",
+                question: "In IB Digital Society, which statement accurately defines the fundamental concept of a 'computer'?",
+                options: [
+                    "A multi-purpose programmable electronic system that accepts raw input data, processes it via programmed logic, and produces output.",
+                    "An exclusively graphical display panel used solely for rendering web page media.",
+                    "A fiber-optic cable infrastructure designed to route internet packets between server rooms.",
+                    "A closed database index used exclusively for verifying user login credentials."
+                ],
+                correct: 0,
+                explanation: "A computer is defined as an extensible electronic system that accepts input data, processes it according to stored instructions, and produces meaningful output."
+            },
+            {
+                id: 2,
+                concept: "Hardware",
+                question: "What constitutes the 'hardware' component layer of a computing system?",
+                options: [
+                    "The physical, tangible electronic and mechanical components such as the CPU, motherboard, RAM, storage drives, and peripherals.",
+                    "The set of compiled algorithms written in high-level programming languages.",
+                    "The security rule permissions stored in operating system user access matrices.",
+                    "The encryption key pairs generated during database query validation."
+                ],
+                correct: 0,
+                explanation: "Hardware includes all physical, tangible, electronic, and mechanical parts of a computer system, distinguishing it from software instructions."
+            },
+            {
+                id: 3,
+                concept: "Software",
+                question: "How is 'software' defined within computer systems architecture?",
+                options: [
+                    "The physical copper circuitry pathways transmitting electricity between processors.",
+                    "The non-tangible set of programs, instructions, and operating procedures that govern hardware operations.",
+                    "The protective physical enclosure surrounding tablet computers and mobile phones.",
+                    "The internal lithium battery supplying electrical power to internal microchips."
+                ],
+                correct: 1,
+                explanation: "Software comprises intangible programs, sets of instructions, and routines that direct hardware components to execute specific tasks."
+            },
+            {
+                id: 4,
+                concept: "Embedded Computers",
+                question: "Which scenario provides an accurate example of an 'Embedded Computer'?",
+                options: [
+                    "A custom liquid-cooled desktop tower designed for high-performance video editing.",
+                    "A dedicated microcontroller built directly into an automobile's Anti-lock Braking System (ABS) to execute specific real-time tasks.",
+                    "A cloud server host running multiple virtual machines simultaneously.",
+                    "A centralized mainframe system processing credit card transactions."
+                ],
+                correct: 1,
+                explanation: "Embedded computers are specialized microcontrollers integrated directly into larger host devices to perform specific real-time functions."
+            },
+            {
+                id: 5,
+                concept: "Personal Computer (PC)",
+                question: "What is the key defining characteristic of a 'Personal Computer' (PC)?",
+                options: [
+                    "A general-purpose, single-user computing device designed to perform everyday tasks like productivity, media consumption, and communication.",
+                    "A massive supercomputer cluster reserved exclusively for climate simulation modeling.",
+                    "A network router dedicated solely to converting domain names into IP addresses.",
+                    "A microchip engineered solely to manage microwave heating cycles."
+                ],
+                correct: 0,
+                explanation: "A Personal Computer (PC) is a versatile, single-user system designed to meet individual productivity, creative, and personal computing needs."
+            },
+            {
+                id: 6,
+                concept: "Tablet",
+                question: "Which combination of attributes uniquely defines a modern 'Tablet' computer?",
+                options: [
+                    "A lightweight mobile slate featuring a flat touchscreen interface, mobile OS, and wireless connectivity without a permanent physical keyboard.",
+                    "A heavy rack-mounted enterprise server requiring specialized liquid cooling.",
+                    "A wrist-worn biometric sensor designed solely for counting steps.",
+                    "A command-line terminal directly connected to an legacy mainframe."
+                ],
+                correct: 0,
+                explanation: "Tablets combine touch-screen input, highly mobile form factors, and mobile operating systems into a single portable slate."
+            },
+            {
+                id: 7,
+                concept: "Smart / Mobile Device",
+                question: "What distinguishes 'Smart / Mobile Devices' in modern ubiquitous computing environments?",
+                options: [
+                    "They depend exclusively on wired physical Ethernet connections to calculate data.",
+                    "They integrate cellular/Wi-Fi connectivity, built-in sensors (GPS, gyroscope), and an app ecosystem for context-aware mobile computing.",
+                    "They utilize manual physical toggle switches to calculate basic binary equations.",
+                    "They are inherently unable to store user files or execute third-party software."
+                ],
+                correct: 1,
+                explanation: "Smart/Mobile devices feature ubiquitous wireless connectivity, multi-sensor hardware (GPS, accelerometers), and rich app platforms."
+            },
+            {
+                id: 8,
+                concept: "Wearable Computers",
+                question: "What is the primary operational function of 'Wearable Computers'?",
+                options: [
+                    "Devices worn directly on the body (e.g., smartwatches, fitness trackers) that continuously collect health and biometric metrics in real-time.",
+                    "Heavy corporate backup servers designed to be moved on wheeled carts.",
+                    "Fixed desktop computers permanently installed in university research labs.",
+                    "Submerged fiber-optic repeaters handling international internet traffic."
+                ],
+                correct: 0,
+                explanation: "Wearables integrate seamlessly onto human attire or accessories, providing real-time biometric telemetry and hands-free notifications."
+            },
+            {
+                id: 9,
+                concept: "Mainframe",
+                question: "What critical role do 'Mainframe' computers fulfill in global corporate IT infrastructure?",
+                options: [
+                    "Executing light-weight single-user office tasks in small local retail shops.",
+                    "Processing immense volumes of bulk data, high-throughput financial transactions, and enterprise workloads with maximum fault tolerance.",
+                    "Rendering high-frame-rate 3D graphics for handheld mobile gaming apps.",
+                    "Controlling smart home lighting schedules over local Bluetooth connections."
+                ],
+                correct: 1,
+                explanation: "Mainframes are ultra-reliable, high-capacity enterprise systems engineered for massive batch processing and real-time transaction handling."
+            },
+            {
+                id: 10,
+                concept: "Server",
+                question: "What is the principal role of a 'Server' in client-server network architecture?",
+                options: [
+                    "A client terminal that only requests content without providing services to other systems.",
+                    "A centralized host system that manages, stores, and provides shared resources, data, or services to client devices across a network.",
+                    "A pocket calculator designed strictly for standard arithmetic operations.",
+                    "An offline optical drive used exclusively for backing up personal audio files."
+                ],
+                correct: 1,
+                explanation: "Servers host, manage, and distribute centralized data, services, or application resources requested by connected client devices."
+            },
+            {
+                id: 11,
+                concept: "Machine Code",
+                question: "What defines 'Machine Code' at the CPU execution level?",
+                options: [
+                    "The lowest-level binary instruction set (0s and 1s) directly recognized and executed by central processing unit hardware circuits.",
+                    "High-level human-readable code written using natural words like 'if', 'while', and 'print'.",
+                    "A style sheet language used for formatting web page layouts.",
+                    "A structured database language used for querying table records."
+                ],
+                correct: 0,
+                explanation: "Machine code consists of pure binary sequences (0s and 1s) that a CPU's logic gates execute directly without further translation."
+            },
+            {
+                id: 12,
+                concept: "Assembly Language",
+                question: "How does 'Assembly Language' function relative to raw machine code?",
+                options: [
+                    "It is a low-level symbolic language using short mnemonics (e.g., MOV, ADD) that requires an Assembler to translate into binary machine code.",
+                    "It is a drag-and-drop block coding language designed for elementary education.",
+                    "It is an uncompiled natural spoken language dialect used for technical writing.",
+                    "It is a cloud synchronization protocol used for streaming digital media."
+                ],
+                correct: 0,
+                explanation: "Assembly language replaces numeric binary opcodes with human-readable mnemonics, which an assembler converts 1-to-1 into machine code."
+            },
+            {
+                id: 13,
+                concept: "High-Level Languages",
+                question: "Why are 'High-Level Languages' (e.g., Python, Java, C++) standard in modern software development?",
+                options: [
+                    "They allow developers to write platform-independent, human-readable code that is translated via compilers or interpreters.",
+                    "They force software engineers to manually switch CPU voltage gates for every calculation.",
+                    "They execute instantly without needing any memory allocation or translation.",
+                    "They can only be executed on mainframe hardware constructed before 1990."
+                ],
+                correct: 0,
+                explanation: "High-level languages abstract away CPU-specific architecture, enabling programmers to write readable, reusable code translated by compilers/interpreters."
+            },
+            {
+                id: 14,
+                concept: "Quantum Computing",
+                question: "What core physical principle differentiates 'Quantum Computing' from classical computing systems?",
+                options: [
+                    "It utilizes classical binary bits that exist strictly as either 0 or 1.",
+                    "It utilizes quantum phenomena (qubits, superposition, and entanglement) to evaluate complex multi-state computations simultaneously.",
+                    "It uses mechanical vacuum tubes and copper cogwheels to store mathematical values.",
+                    "It relies on basic chemical battery power to factor primary encryption numbers."
+                ],
+                correct: 1,
+                explanation: "Quantum computing leverages qubits operating under superposition and entanglement to perform complex parallel calculations exponentially faster."
+            },
+            {
+                id: 15,
+                concept: "Utility Software",
+                question: "What primary system management task does 'Utility Software' perform?",
+                options: [
+                    "Editing digital video files and composing multi-track audio.",
+                    "System software designed to analyze, configure, optimize, or maintain computer performance and security (e.g., antivirus, defragmenters).",
+                    "Browsing social media feeds and streaming high-definition video.",
+                    "Compiling raw source code directly into mobile device user interfaces."
+                ],
+                correct: 1,
+                explanation: "Utility software supports operating systems by maintaining, analyzing, optimizing, and securing system resources and storage devices."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let streak = 0;
+        let userAnswers = [];
+        let gameActive = false;
+
+        // Canvas & Graphics Setup
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Drone Target Objects Array
+        let drones = [];
+        let laserBeams = [];
+        let particles = [];
+        let starfield = [];
+
+        // Cannon position
+        let cannon = {
+            x: 0,
+            y: 0,
+            angle: -Math.PI / 2
+        };
+
+        // Synthesized Audio Engine using Web Audio API
+        class SoundEngine {
+            constructor() {
+                this.audioCtx = null;
+            }
+            init() {
+                if (!this.audioCtx) {
+                    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+            playTone(freq, type, duration, volume = 0.15) {
+                if (!this.audioCtx) return;
+                try {
+                    const osc = this.audioCtx.createOscillator();
+                    const gain = this.audioCtx.createGain();
+                    osc.type = type || 'sine';
+                    osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
+                    gain.gain.setValueAtTime(volume, this.audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.audioCtx.destination);
+                    osc.start();
+                    osc.stop(this.audioCtx.currentTime + duration);
+                } catch(e) {}
+            }
+            playLaserFire() {
+                this.init();
+                this.playTone(880, 'sawtooth', 0.15, 0.18);
+                setTimeout(() => this.playTone(440, 'sine', 0.1), 50);
+            }
+            playExplosion() {
+                this.init();
+                this.playTone(120, 'square', 0.35, 0.25);
+                setTimeout(() => this.playTone(60, 'sawtooth', 0.3), 80);
+            }
+            playZapError() {
+                this.init();
+                this.playTone(180, 'sawtooth', 0.25, 0.2);
+                setTimeout(() => this.playTone(110, 'sawtooth', 0.2), 100);
+            }
+        }
+        const audio = new SoundEngine();
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            cannon.x = canvas.width / 2;
+            cannon.y = canvas.height - 30;
+            initStarfield();
+            repositionDrones();
+        }
+
+        function initStarfield() {
+            starfield = [];
+            const count = Math.floor((canvas.width * canvas.height) / 4000);
+            for (let i = 0; i < count; i++) {
+                starfield.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2 + 0.5,
+                    alpha: Math.random() * 0.8 + 0.2,
+                    speed: Math.random() * 0.5 + 0.2
+                });
+            }
+        }
+
+        function initDrones() {
+            drones = [];
+            const labels = ['A', 'B', 'C', 'D'];
+            
+            for (let i = 0; i < 4; i++) {
+                drones.push({
+                    id: i,
+                    label: `DRONE ${labels[i]}`,
+                    x: 0,
+                    y: 0,
+                    targetX: 0,
+                    targetY: 0,
+                    width: 140,
+                    height: 70,
+                    hoverOffset: Math.random() * Math.PI * 2,
+                    hoverSpeed: 0.03 + Math.random() * 0.02,
+                    radius: 45
+                });
+            }
+            repositionDrones();
+        }
+
+        function repositionDrones() {
+            if (drones.length === 0) return;
+            const padding = 20;
+            const topMargin = canvas.height * 0.28;
+            const availableWidth = canvas.width;
+            
+            // Layout 4 drones across 2x2 grid or horizontal line depending on screen width
+            if (canvas.width > 768) {
+                // 4 drones side by side in upper sky
+                const colWidth = availableWidth / 4;
+                drones.forEach((drone, i) => {
+                    drone.targetX = colWidth * i + colWidth / 2;
+                    drone.targetY = topMargin + (i % 2 === 0 ? -15 : 15);
+                    if (drone.x === 0) drone.x = drone.targetX;
+                    if (drone.y === 0) drone.y = drone.targetY;
+                });
+            } else {
+                // 2x2 layout for mobile screens
+                const colWidth = availableWidth / 2;
+                drones.forEach((drone, i) => {
+                    const col = i % 2;
+                    const row = Math.floor(i / 2);
+                    drone.targetX = colWidth * col + colWidth / 2;
+                    drone.targetY = topMargin + row * 85;
+                    if (drone.x === 0) drone.x = drone.targetX;
+                    if (drone.y === 0) drone.y = drone.targetY;
+                });
+            }
+        }
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw Moving Starfield
+            ctx.fillStyle = '#00f0ff';
+            starfield.forEach(star => {
+                star.y += star.speed;
+                if (star.y > canvas.height) star.y = 0;
+                ctx.globalAlpha = star.alpha;
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+            });
+            ctx.globalAlpha = 1.0;
+
+            // 2. Draw Hovering Cyber Drones
+            if (gameActive) {
+                drones.forEach(drone => {
+                    drone.hoverOffset += drone.hoverSpeed;
+                    const hoverY = Math.sin(drone.hoverOffset) * 12;
+                    const currentX = drone.targetX;
+                    const currentY = drone.targetY + hoverY;
+                    drone.x = currentX;
+                    drone.y = currentY;
+
+                    ctx.save();
+                    ctx.translate(currentX, currentY);
+
+                    // Drone Glow / Shadows
+                    ctx.shadowColor = '#00f0ff';
+                    ctx.shadowBlur = 15;
+
+                    // Drone Rotors & Body
+                    ctx.strokeStyle = '#00f0ff';
+                    ctx.fillStyle = 'rgba(8, 15, 30, 0.9)';
+                    ctx.lineWidth = 2;
+
+                    // Rotor arms
+                    ctx.beginPath();
+                    ctx.moveTo(-45, -15); ctx.lineTo(45, 15);
+                    ctx.moveTo(-45, 15); ctx.lineTo(45, -15);
+                    ctx.stroke();
+
+                    // Rotor Spinning Circles
+                    const spinAngle = Date.now() * 0.01;
+                    [-45, 45].forEach(rx => {
+                        [-15, 15].forEach(ry => {
+                            ctx.beginPath();
+                            ctx.arc(rx, ry, 12, 0, Math.PI * 2);
+                            ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
+                            ctx.fill();
+                            ctx.stroke();
+                        });
+                    });
+
+                    // Main Drone Cyber Pod Body
+                    ctx.beginPath();
+                    ctx.roundRect(-50, -20, 100, 40, 10);
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Drone Central Eye / Sensor Lens
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.beginPath();
+                    ctx.arc(0, -2, 6, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Drone Label Tag Text (DRONE A, B, C, D)
+                    ctx.font = '700 13px Orbitron';
+                    ctx.fillStyle = '#00f0ff';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(drone.label, 0, 10);
+
+                    ctx.restore();
+                });
+            }
+
+            // 3. Draw Laser Beams
+            laserBeams.forEach((beam, index) => {
+                beam.x += beam.vx;
+                beam.y += beam.vy;
+
+                ctx.save();
+                ctx.strokeStyle = '#00f0ff';
+                ctx.lineWidth = 4;
+                ctx.shadowColor = '#00f0ff';
+                ctx.shadowBlur = 20;
+
+                ctx.beginPath();
+                ctx.moveTo(beam.x, beam.y);
+                ctx.lineTo(beam.x - beam.vx * 2, beam.y - beam.vy * 2);
+                ctx.stroke();
+                ctx.restore();
+
+                // Check collision with target drone
+                if (beam.targetIndex !== undefined && drones[beam.targetIndex]) {
+                    const target = drones[beam.targetIndex];
+                    const dist = Math.hypot(beam.x - target.x, beam.y - target.y);
+                    if (dist < 35) {
+                        createExplosion(target.x, target.y);
+                        laserBeams.splice(index, 1);
+                        triggerAnswerSelection(beam.targetIndex);
+                    }
+                } else if (beam.y < 0 || beam.x < 0 || beam.x > canvas.width) {
+                    laserBeams.splice(index, 1);
+                }
+            });
+
+            // 4. Draw Particle Explosions
+            particles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.03;
+                p.size *= 0.95;
+
+                ctx.save();
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                if (p.alpha <= 0) particles.splice(idx, 1);
+            });
+
+            // 5. Draw Laser Cannon at Bottom
+            ctx.save();
+            ctx.translate(cannon.x, cannon.y);
+            
+            // Cannon base
+            ctx.fillStyle = '#0f172a';
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 15;
+
+            ctx.beginPath();
+            ctx.arc(0, 20, 35, Math.PI, 0);
+            ctx.fill();
+            ctx.stroke();
+
+            // Cannon Barrel
+            ctx.rotate(cannon.angle);
+            ctx.fillStyle = '#00f0ff';
+            ctx.fillRect(-6, -45, 12, 45);
+
+            ctx.restore();
+
+            requestAnimationFrame(animateCanvas);
+        }
+
+        function createExplosion(x, y) {
+            audio.playExplosion();
+            const colors = ['#00f0ff', '#38bdf8', '#38bdf8', '#ffffff', '#f59e0b'];
+            for (let i = 0; i < 35; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 8 + 2;
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    size: Math.random() * 6 + 3,
+                    alpha: 1.0,
+                    color: colors[Math.floor(Math.random() * colors.length)]
+                });
+            }
+        }
+
+        function loadQuestion() {
+            if (currentQuestionIndex >= questionsData.length) {
+                endGame();
+                return;
+            }
+
+            const q = questionsData[currentQuestionIndex];
+
+            // Update Dynamic Stats
+            document.getElementById('hud-progress').innerText = `${currentQuestionIndex + 1}/${questionsData.length}`;
+            document.getElementById('hud-score').innerText = score;
+            document.getElementById('hud-streak').innerText = `${streak}x`;
+
+            // Update Question HUD Text
+            document.getElementById('question-badge').innerText = `TARGET DRONE ${currentQuestionIndex + 1} OF ${questionsData.length}`;
+            document.getElementById('question-text').innerText = q.question;
+
+            // Update Option Buttons beneath canvas
+            const droneBtns = document.querySelectorAll('.drone-btn');
+            droneBtns.forEach((btn, index) => {
+                const textSpan = btn.querySelector('.option-text');
+                textSpan.innerText = q.options[index];
+
+                // Uniform blue color scheme maintained across option panels
+                btn.className = "drone-btn p-3.5 sm:p-4 rounded-xl text-left flex items-start gap-3 text-sm sm:text-base font-semibold transition cursor-pointer";
+            });
+
+            initDrones();
+            gameActive = true;
+        }
+
+        function fireLaserAtDrone(targetIndex) {
+            if (!gameActive || targetIndex < 0 || targetIndex >= drones.length) return;
+
+            const target = drones[targetIndex];
+            const dx = target.x - cannon.x;
+            const dy = target.y - cannon.y;
+            cannon.angle = Math.atan2(dy, dx) + Math.PI / 2;
+
+            const angle = Math.atan2(dy, dx);
+            const speed = 22;
+
+            laserBeams.push({
+                x: cannon.x,
+                y: cannon.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                targetIndex: targetIndex
+            });
+
+            audio.playLaserFire();
+        }
+
+        function triggerAnswerSelection(selectedIndex) {
+            if (!gameActive) return;
+
+            gameActive = false; // Temporarily pause input during assessment transition
+
+            const q = questionsData[currentQuestionIndex];
+            const isCorrect = (selectedIndex === q.correct);
+
+            // Log answer record for revision
+            userAnswers.push({
+                questionId: q.id,
+                concept: q.concept,
+                question: q.question,
+                options: q.options,
+                selectedIndex: selectedIndex,
+                correctIndex: q.correct,
+                isCorrect: isCorrect,
+                explanation: q.explanation
+            });
+
+            if (isCorrect) {
+                score += 100 + (streak * 25);
+                streak++;
+            } else {
+                streak = 0;
+                audio.playZapError();
+            }
+
+            // Brief delay before presenting next target
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questionsData.length) {
+                    loadQuestion();
+                } else {
+                    endGame();
+                }
+            }, 750);
+        }
+
+        function endGame() {
+            gameActive = false;
+
+            const modal = document.getElementById('review-modal');
+            modal.classList.remove('hidden');
+
+            const totalQuestions = questionsData.length;
+            const correctCount = userAnswers.filter(a => a.isCorrect).length;
+            const accuracy = Math.round((correctCount / totalQuestions) * 100);
+
+            document.getElementById('summary-score').innerText = score;
+            document.getElementById('summary-accuracy').innerText = `${accuracy}%`;
+            document.getElementById('summary-correct').innerText = `${correctCount}/${totalQuestions}`;
+
+            // IB Diploma Grading Scale Estimate
+            let grade = "Level 1";
+            if (accuracy >= 85) grade = "Level 7 (Outstanding)";
+            else if (accuracy >= 75) grade = "Level 6 (Excellent)";
+            else if (accuracy >= 65) grade = "Level 5 (Proficient)";
+            else if (accuracy >= 50) grade = "Level 4 (Satisfactory)";
+            else if (accuracy >= 40) grade = "Level 3 (Basic)";
+            else grade = "Level 2 (Needs Revision)";
+
+            document.getElementById('summary-grade').innerText = grade;
+
+            // Populate Teacher Fara's Detailed Revision Cards
+            const listContainer = document.getElementById('review-list-container');
+            listContainer.innerHTML = '';
+
+            userAnswers.forEach((ans, idx) => {
+                const card = document.createElement('div');
+                card.className = `p-4 sm:p-5 rounded-xl border ${ans.isCorrect ? 'bg-slate-900/80 border-emerald-500/40' : 'bg-slate-900/80 border-rose-500/40'}`;
+
+                card.innerHTML = `
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <span class="font-orbitron text-xs font-bold px-2.5 py-1 rounded ${ans.isCorrect ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-rose-950 text-rose-300 border border-rose-700'}">
+                            TARGET ${idx + 1}: ${ans.concept.toUpperCase()}
+                        </span>
+                        <span class="text-xs ${ans.isCorrect ? 'text-emerald-400' : 'text-rose-400'} font-semibold flex items-center gap-1">
+                            <i data-lucide="${ans.isCorrect ? 'check-circle' : 'x-circle'}" class="w-4 h-4"></i>
+                            ${ans.isCorrect ? 'NEUTRALIZED (CORRECT)' : 'MISSED (INCORRECT)'}
+                        </span>
+                    </div>
+
+                    <h3 class="text-slate-100 font-semibold text-sm sm:text-base mb-3">${ans.question}</h3>
+
+                    <div class="space-y-1.5 text-xs sm:text-sm mb-3">
+                        <p class="p-2.5 rounded-lg ${ans.isCorrect ? 'bg-emerald-950/60 border border-emerald-800 text-emerald-200' : 'bg-rose-950/60 border border-rose-800 text-rose-200'}">
+                            <strong>Your Drone Selection:</strong> ${ans.options[ans.selectedIndex]}
+                        </p>
+                        ${!ans.isCorrect ? `
+                            <p class="p-2.5 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-200">
+                                <strong>Correct Standard Answer:</strong> ${ans.options[ans.correctIndex]}
+                            </p>
+                        ` : ''}
+                    </div>
+
+                    <div class="p-3 rounded-lg bg-slate-950/80 border border-cyan-900/50 text-xs text-slate-300 leading-relaxed">
+                        <strong class="text-cyan-400 font-orbitron block mb-1">TEACHER FARA'S REVISION EXPLANATION:</strong>
+                        ${ans.explanation}
+                    </div>
+                `;
+
+                listContainer.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        function restartGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            streak = 0;
+            userAnswers = [];
+
+            document.getElementById('review-modal').classList.add('hidden');
+            document.getElementById('hud-stats').classList.remove('hidden');
+
+            loadQuestion();
+        }
+
+        // Direct Click / Tap on Canvas Flying Drones
+        canvas.addEventListener('click', (e) => {
+            if (!gameActive) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            // Check if any drone was clicked directly
+            let droneClicked = false;
+            drones.forEach((drone, index) => {
+                const dist = Math.hypot(clickX - drone.x, clickY - drone.y);
+                if (dist < 55) {
+                    droneClicked = true;
+                    fireLaserAtDrone(index);
+                }
+            });
+
+            // If clicked somewhere else in upper sky, fire laser towards closest drone
+            if (!droneClicked && clickY < canvas.height * 0.7) {
+                let closestIdx = 0;
+                let minDist = Infinity;
+                drones.forEach((drone, index) => {
+                    const dist = Math.hypot(clickX - drone.x, clickY - drone.y);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        closestIdx = index;
+                    }
+                });
+                fireLaserAtDrone(closestIdx);
+            }
+        });
+
+        // Bottom Drone Option Buttons Direct Click Selection
+        document.querySelectorAll('.drone-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!gameActive) return;
+                const index = parseInt(btn.getAttribute('data-index'));
+                fireLaserAtDrone(index);
+            });
+        });
+
+        // Start & Restart Button Listeners
+        document.getElementById('btn-start-game').addEventListener('click', () => {
+            document.getElementById('start-modal').classList.add('hidden');
+            document.getElementById('hud-stats').classList.remove('hidden');
+            loadQuestion();
+        });
+
+        document.getElementById('btn-restart').addEventListener('click', restartGame);
+
+        // Window Resize Listener
+        window.addEventListener('resize', resizeCanvas);
+
+        // Window Load Initializer
+        window.onload = function() {
+            lucide.createIcons();
+            resizeCanvas();
+            requestAnimationFrame(animateCanvas);
+        };
+    </script>
+</body>
+</html>
