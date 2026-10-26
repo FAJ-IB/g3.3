@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB Digital Society Drone Game</title>
+    <!-- jsPDF Library for generating PDF certificates -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Vanilla CSS Styling & Themes */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: #080b11 radial-gradient(circle at 50% 20%, #111827 0%, #080b11 100%);
+            color: #f0f6fc;
+            overflow-x: hidden;
+            user-select: none;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Glassmorphic HUD Layout */
+        .hud-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(56, 189, 248, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hud-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+            animation: scanline 4s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* Custom Glowing & Neon Effects */
+        .neon-btn {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #ffffff;
+            border: 1px solid #38bdf8;
+            padding: 0.9rem 1.8rem;
+            border-radius: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.35);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            text-transform: uppercase;
+        }
+
+        .neon-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.8), 0 0 10px rgba(255, 255, 255, 0.5);
+            background: linear-gradient(135deg, #0369a1 0%, #38bdf8 100%);
+        }
+
+        .neon-btn-success {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            border-color: #34d399;
+            box-shadow: 0 0 15px rgba(52, 211, 153, 0.35);
+        }
+
+        .neon-btn-success:hover {
+            box-shadow: 0 0 25px rgba(52, 211, 153, 0.8);
+            background: linear-gradient(135deg, #047857 0%, #34d399 100%);
+        }
+
+        .neon-btn-secondary {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: #475569;
+            color: #cbd5e1;
+        }
+
+        .neon-btn-secondary:hover {
+            background: #334155;
+            color: #ffffff;
+            border-color: #94a3b8;
+            box-shadow: 0 0 15px rgba(148, 163, 184, 0.4);
+        }
+
+        /* Game canvas styling */
+        #gameCanvas {
+            background: radial-gradient(circle at center, #0f172a 0%, #030712 100%);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 0 0 16px 16px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+            cursor: crosshair;
+            display: block;
+            width: 100%;
+            height: 480px;
+        }
+
+        /* Inputs & Typography */
+        input[type="text"] {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1.5px solid #334155;
+            border-radius: 10px;
+            color: #ffffff;
+            font-size: 1.05rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        /* Feedback Toast Popup */
+        #feedbackToast {
+            position: absolute;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.7rem 1.8rem;
+            border-radius: 9999px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Branding -->
+    <header class="hud-card" style="width: 100%; max-width: 1000px; padding: 1.2rem 1.8rem; margin-bottom: 1.2rem; border-bottom: 3px solid #38bdf8; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; padding: 0.7rem; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-crosshairs" style="color: #38bdf8; font-size: 1.8rem;"></i>
+            </div>
+            <div>
+                <h1 class="font-orbitron" style="font-size: 1.5rem; color: #38bdf8; letter-spacing: 1.5px; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);">IB Digital Society Drone Game</h1>
+                <p style="font-size: 0.85rem; color: #94a3b8; font-weight: 600;">TOPIC 3.3: COMPUTING DEVICES</p>
+            </div>
+        </div>
+        <div style="text-align: right; background: rgba(30, 41, 59, 0.6); padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <span style="font-size: 0.7rem; color: #94a3b8; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Course Author</span>
+            <span style="font-weight: 700; color: #7dd3fc; font-size: 0.95rem;"><i class="fa-solid fa-user-check" style="color: #38bdf8; margin-right: 4px;"></i> Teacher Fara</span>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main style="width: 100%; max-width: 1000px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+
+        <!-- 1. START SCREEN / REGISTRATION -->
+        <section id="startScreen" class="hud-card" style="width: 100%; max-width: 560px; padding: 2.2rem; text-align: center; display: flex; flex-direction: column; gap: 1.8rem;">
+            <div>
+                <div style="display: inline-block; padding: 1.2rem; border-radius: 50%; background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, rgba(15, 23, 42, 0.5) 100%); border: 2px solid #38bdf8; color: #38bdf8; margin-bottom: 0.8rem; box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);">
+                    <i class="fa-solid fa-crosshairs" style="font-size: 2.8rem;"></i>
+                </div>
+                <h2 class="font-orbitron" style="font-size: 1.8rem; color: #ffffff; letter-spacing: 1px;">Cadet Authentication</h2>
+                <p style="font-size: 0.9rem; color: #94a3b8; margin-top: 0.4rem; line-height: 1.4;">Enter your full official name below. Your registered name will be generated onto your official IB Digital Society Certificate of Achievement upon completion.</p>
+            </div>
+
+            <div style="text-align: left; display: flex; flex-direction: column; gap: 1.2rem;">
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;"><i class="fa-solid fa-id-card"></i> Student Full Name</label>
+                    <input type="text" id="studentName" placeholder="e.g. Alex Morgan" autocomplete="off">
+                    <p id="nameError" class="hidden" style="color: #f87171; font-size: 0.8rem; margin-top: 0.5rem; font-weight: 600;"><i class="fa-solid fa-circle-exclamation"></i> Please enter your name to proceed.</p>
+                </div>
+
+                <div style="padding: 1.1rem; background: rgba(15, 23, 42, 0.9); border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.2); font-size: 0.85rem; color: #cbd5e1; display: flex; flex-direction: column; gap: 0.5rem;">
+                    <p style="font-weight: 700; color: #38bdf8; font-family: 'Orbitron', sans-serif;"><i class="fa-solid fa-bullseye"></i> MISSION DIRECTIVES:</p>
+                    <ul style="padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.35rem; line-height: 1.3;">
+                        <li>Analyze the <strong>TOPIC 3.3: COMPUTING DEVICES</strong> objective question displayed on the HUD top bar.</li>
+                        <li>Click/tap on the active drone carrying the <strong>CORRECT concept answer</strong>.</li>
+                        <li>Clear all 20 questions to unlock final review analytics & download your PDF Certificate.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <button id="btnStartGame" class="neon-btn" style="font-size: 1.15rem; width: 100%; padding: 1rem;">
+                INITIALIZE ASSESSMENT <i class="fa-solid fa-play"></i>
+            </button>
+        </section>
+
+        <!-- 2. GAME CANVAS & INTERFACE CONTAINER -->
+        <section id="gameScreen" class="hidden" style="width: 100%; flex-direction: column; align-items: center;">
+            
+            <!-- HUD TOP BAR -->
+            <div class="hud-card" style="width: 100%; border-radius: 12px 12px 0 0; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid #30363d;">
+                <!-- Score & Progress -->
+                <div style="display: flex; gap: 1.5rem; align-items: center;">
+                    <div>
+                        <span style="font-size: 0.7rem; color: #8b949e; display: block; text-transform: uppercase;">Score</span>
+                        <span id="scoreDisplay" class="font-orbitron" style="font-size: 1.5rem; font-weight: bold; color: #38bdf8;">0</span>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.7rem; color: #8b949e; display: block; text-transform: uppercase;">Progress</span>
+                        <span id="progressDisplay" class="font-orbitron" style="font-size: 1.3rem; font-weight: bold; color: #34d399;">1 / 20</span>
+                    </div>
+                </div>
+
+                <!-- Active Question Container -->
+                <div style="flex: 1; text-align: center; padding: 0 1rem; min-width: 280px;">
+                    <span style="font-size: 0.7rem; color: #38bdf8; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Target Question Objective</span>
+                    <h3 id="questionText" style="font-size: 0.95rem; font-weight: 600; color: #ffffff; margin-top: 0.2rem; line-height: 1.3;">
+                        Question loading...
+                    </h3>
+                </div>
+
+                <!-- Student Tag -->
+                <div style="text-align: right;">
+                    <span style="font-size: 0.7rem; color: #8b949e; display: block;">Cadet</span>
+                    <span id="hudStudentName" style="font-weight: 600; color: #e2e8f0; font-size: 0.9rem;">Student</span>
+                </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div style="position: relative; width: 100%;">
+                <canvas id="gameCanvas"></canvas>
+
+                <!-- Feedback Toast Popup -->
+                <div id="feedbackToast" class="font-orbitron" style="position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); padding: 0.6rem 1.5rem; border-radius: 9999px; font-size: 0.85rem; font-weight: bold; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                    Target Destroyed!
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. END SCREEN / RESULTS -->
+        <section id="endScreen" class="hud-card hidden" style="width: 100%; max-width: 650px; padding: 2rem; text-align: center; display: flex; flex-direction: column; gap: 1.5rem; margin: auto;">
+            <div>
+                <div style="display: inline-block; padding: 1rem; border-radius: 50%; background: rgba(52, 211, 153, 0.1); color: #34d399; margin-bottom: 0.5rem;">
+                    <i class="fa-solid fa-award" style="font-size: 3rem;"></i>
+                </div>
+                <h2 class="font-orbitron" style="font-size: 1.8rem; color: #ffffff;">Assessment Complete!</h2>
+                <p style="color: #94a3b8; font-size: 0.9rem;">Congratulations Cadet <span id="finalStudentName" style="color: #38bdf8; font-weight: bold;"></span>.</p>
+            </div>
+
+            <!-- Score Summary Dashboard -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; background: rgba(15, 23, 42, 0.8); padding: 1rem; border-radius: 10px; border: 1px solid #1e293b;">
+                <div>
+                    <span style="font-size: 0.75rem; color: #8b949e; display: block;">Final Score</span>
+                    <span id="finalScore" class="font-orbitron" style="font-size: 1.5rem; font-weight: bold; color: #38bdf8;">0</span>
+                </div>
+                <div style="border-left: 1px solid #1e293b; border-right: 1px solid #1e293b;">
+                    <span style="font-size: 0.75rem; color: #8b949e; display: block;">Accuracy</span>
+                    <span id="finalAccuracy" class="font-orbitron" style="font-size: 1.5rem; font-weight: bold; color: #34d399;">0%</span>
+                </div>
+                <div>
+                    <span style="font-size: 0.75rem; color: #8b949e; display: block;">Questions Cleared</span>
+                    <span id="finalQuestions" class="font-orbitron" style="font-size: 1.5rem; font-weight: bold; color: #c084fc;">20/20</span>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center;">
+                <button id="btnDownloadPdf" class="neon-btn neon-btn-success" style="flex: 1; min-width: 200px;">
+                    <i class="fa-solid fa-file-pdf"></i> DOWNLOAD CERTIFICATE (.PDF)
+                </button>
+                <button id="btnReviewAnswers" class="neon-btn" style="flex: 1; min-width: 180px;">
+                    <i class="fa-solid fa-clipboard-check"></i> REVIEW ANSWERS
+                </button>
+                <button id="btnRestart" class="neon-btn neon-btn-secondary">
+                    <i class="fa-solid fa-rotate-right"></i> RESTART
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- REVIEW MODAL -->
+    <div id="reviewModal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="hud-card" style="width: 100%; max-width: 800px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
+            <!-- Modal Header -->
+            <div style="padding: 1.2rem; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.9);">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <i class="fa-solid fa-book-open" style="color: #38bdf8; font-size: 1.2rem;"></i>
+                    <h3 class="font-orbitron" style="font-size: 1.2rem; color: #ffffff;">TOPIC 3.3: COMPUTING DEVICES Assessment Review</h3>
+                </div>
+                <button id="btnCloseReview" style="background: none; border: none; color: #8b949e; font-size: 1.5rem; cursor: pointer;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content - Scrollable Question List -->
+            <div id="reviewList" style="padding: 1.2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; flex: 1;">
+                <!-- Dynamically populated review items -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div style="padding: 1rem; border-top: 1px solid #30363d; background: rgba(15, 23, 42, 0.9); text-align: right;">
+                <button id="btnCloseReviewFooter" class="neon-btn">
+                    CLOSE REVIEW
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer style="width: 100%; text-align: center; padding: 1rem 0; font-size: 0.75rem; color: #6e7681; margin-top: 1rem;">
+        IB Digital Society TOPIC 3.3: COMPUTING DEVICES | Designed for Diploma Programme Students | Author: Teacher Fara
+    </footer>
+
+    <!-- GAME & APPLICATION LOGIC -->
+    <script>
+        // --- SOUND SYNTHESIZER (Web Audio API) ---
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playLaser() {
+                this.init();
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.15);
+            }
+
+            playCorrect() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            }
+
+            playWrong() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(80, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+
+            playWin() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const notes = [440, 554.37, 659.25, 880]; // A major chord
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.4);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.12);
+                    osc.stop(now + idx * 0.12 + 0.4);
+                });
+            }
+        }
+
+        const soundFX = new SoundFX();
+
+        // --- QUESTION BANK: IB Digital Society Topic 3.3 Computing Devices (20 Questions - Comprehensive) ---
+        const questionBank = [
+            {
+                id: 1,
+                question: "Which term refers to the electronic and physical components that make up a computer system?",
+                options: ["Software", "Hardware", "Operating System", "Utility Code"],
+                correct: "Hardware",
+                explanation: "Hardware includes tangible physical components like circuit boards, processors, and peripheral devices."
+            },
+            {
+                id: 2,
+                question: "What primary electronic component is responsible for executing instructions and processing data in a computer?",
+                options: ["GPU", "CPU", "RAM", "ROM"],
+                correct: "CPU",
+                explanation: "The Central Processing Unit (CPU) acts as the primary brain of a computing system, interpreting and executing data instructions."
+            },
+            {
+                id: 3,
+                question: "Which component provides temporary, high-speed volatile storage for data and programs actively used by the CPU?",
+                options: ["Secondary Storage", "Volatile Memory (RAM)", "Solid State Drive", "Optical Disk"],
+                correct: "Volatile Memory (RAM)",
+                explanation: "Random Access Memory (RAM) provides temporary high-speed primary memory whose contents are lost when power is turned off."
+            },
+            {
+                id: 4,
+                question: "What type of computer system is designed to perform dedicated control functions within a larger mechanical or electrical system?",
+                options: ["Embedded Computer", "Personal Computer", "Mainframe", "Cloud Server"],
+                correct: "Embedded Computer",
+                explanation: "Embedded computers are dedicated microcontrollers embedded inside non-computer physical devices like modern cars or medical equipment."
+            },
+            {
+                id: 5,
+                question: "Which single-user computer is designed for personal productivity, general applications, and direct end-user interaction?",
+                options: ["Mainframe", "Server", "Personal Computer (PC)", "Quantum Cluster"],
+                correct: "Personal Computer (PC)",
+                explanation: "Personal Computers (PCs) are general-purpose computers meant for single individual users to execute daily tasks."
+            },
+            {
+                id: 6,
+                question: "Which mobile device form factor features a flat multi-touch screen display, bridging functions between smartphones and PCs?",
+                options: ["Mainframe", "Tablet", "Server", "Utility Unit"],
+                correct: "Tablet",
+                explanation: "Tablets are thin, portable touchscreen computing devices operating without a physical keyboard."
+            },
+            {
+                id: 7,
+                question: "Handheld touch devices equipped with mobile OS, wireless connectivity, and sensor suites are classified as what?",
+                options: ["Smart / Mobile Devices", "Mainframes", "Assembly Units", "Relational Clusters"],
+                correct: "Smart / Mobile Devices",
+                explanation: "Smartphones and mobile devices integrate touchscreens, OS platforms, and sensors for portable connectivity."
+            },
+            {
+                id: 8,
+                question: "Smartwatches, fitness rings, and smart glasses belong to which modern computing device category?",
+                options: ["Mainframes", "Wearable Computers", "Embedded Arrays", "Enterprise Servers"],
+                correct: "Wearable Computers",
+                explanation: "Wearable computers are body-worn electronic devices capable of continuous data collection and display."
+            },
+            {
+                id: 9,
+                question: "Which high-performance computer processes massive transaction volumes and bulk data operations for enterprise organizations?",
+                options: ["Mainframe", "Tablet", "Embedded Node", "Microcontroller"],
+                correct: "Mainframe",
+                explanation: "Mainframe computers handle large-scale, high-reliability centralized processing for banks, governments, and corporations."
+            },
+            {
+                id: 10,
+                question: "What computer system provides centralized services, files, database resources, or connectivity to client devices across a network?",
+                options: ["Server", "Embedded Device", "Wearable Device", "Assembly Unit"],
+                correct: "Server",
+                explanation: "Servers host shared network resources and serve requests from connected client endpoints."
+            },
+            {
+                id: 11,
+                question: "What core system software manages hardware resources, files, and user interface execution for application programs?",
+                options: ["Operating System", "Malware", "Utility Software", "High-level Compiler"],
+                correct: "Operating System",
+                explanation: "An Operating System (OS) like Linux, Windows, or macOS acts as an intermediary layer between hardware and user software."
+            },
+            {
+                id: 12,
+                question: "What term describes malicious software specifically designed to compromise, damage, or disrupt a computing device?",
+                options: ["Utility Software", "Malware", "Open Source Software", "Proprietary Software"],
+                correct: "Malware",
+                explanation: "Malware (malicious software) includes viruses, ransomware, and spyware intended to exploit computer systems."
+            },
+            {
+                id: 13,
+                question: "Which interface allows users to command systems via text prompts, unlike visual icons in a GUI?",
+                options: ["Command Line Interface (CLI)", "Graphical User Interface (GUI)", "Haptic Feedback", "Sensor Array"],
+                correct: "Command Line Interface (CLI)",
+                explanation: "CLI relies on text-based command inputs, whereas GUI utilizes graphical icons and pointer interactions."
+            },
+            {
+                id: 14,
+                question: "Tactile vibration or force feedback that simulates touch sensation in touchscreens and game controllers is called what?",
+                options: ["Haptic Feedback", "CLI System", "Sensor Response", "Proprietary Logic"],
+                correct: "Haptic Feedback",
+                explanation: "Haptics deliver touch/vibration sensations to improve human-computer interaction realism."
+            },
+            {
+                id: 15,
+                question: "Which input hardware detects physical environmental changes (e.g., motion, light, temperature) and converts them into digital signals?",
+                options: ["Sensor", "Haptic Motor", "Vacuum Tube", "Utility App"],
+                correct: "Sensor",
+                explanation: "Sensors measure physical phenomena and convert them into readable data signals for processors."
+            },
+            {
+                id: 16,
+                question: "Software whose source code is publicly available for anyone to inspect, modify, and distribute is known as what?",
+                options: ["Open Source Software", "Proprietary Software", "Malware", "Machine Code"],
+                correct: "Open Source Software",
+                explanation: "Open source software grants open access to its source code, promoting collaborative development."
+            },
+            {
+                id: 17,
+                question: "Commercial software owned by an individual or corporation with strictly restricted, closed source code is called what?",
+                options: ["Proprietary Software", "Open Source Software", "Assembly Language", "Quantum System"],
+                correct: "Proprietary Software",
+                explanation: "Proprietary (closed-source) software protects source code under copyright licensing."
+            },
+            {
+                id: 18,
+                question: "Which lowest-level programming language consists purely of binary (0s and 1s) directly executed by the CPU?",
+                options: ["Machine Code", "Assembly Language", "Python", "High-level Language"],
+                correct: "Machine Code",
+                explanation: "Machine code consists of pure binary sequence patterns natively understood by processor hardware."
+            },
+            {
+                id: 19,
+                question: "Which low-level programming language uses human-readable mnemonic abbreviations (e.g., MOV, ADD) to represent CPU instructions?",
+                options: ["Assembly Language", "Machine Code", "Java", "Open Source"],
+                correct: "Assembly Language",
+                explanation: "Assembly language replaces raw binary machine code with symbolic mnemonic instructions."
+            },
+            {
+                id: 20,
+                question: "First-generation computers relied on which electronic component that generated high heat and was prone to frequent burnout?",
+                options: ["Vacuum Tubes", "Transistors", "Integrated Circuits", "Microprocessors"],
+                correct: "Vacuum Tubes",
+                explanation: "First-generation computing systems (1940s-1950s) used fragile, bulky vacuum tubes for circuit switching."
+            }
+        ];
+
+        // --- GLOBAL STATE ---
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let totalAttempts = 0;
+        let studentName = "";
+        let userResponses = [];
+        let animationFrameId = null;
+
+        // --- CANVAS ENGINE STATE ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let drones = [];
+        let particles = [];
+        let lasers = [];
+
+        // --- DOM ELEMENTS ---
+        const startScreen = document.getElementById('startScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const endScreen = document.getElementById('endScreen');
+        const studentNameInput = document.getElementById('studentName');
+        const nameError = document.getElementById('nameError');
+        const questionText = document.getElementById('questionText');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const progressDisplay = document.getElementById('progressDisplay');
+        const hudStudentName = document.getElementById('hudStudentName');
+        const feedbackToast = document.getElementById('feedbackToast');
+        const reviewModal = document.getElementById('reviewModal');
+
+        // --- INITIALIZATION ---
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Event Listeners
+            document.getElementById('btnStartGame').addEventListener('click', startGame);
+            document.getElementById('btnDownloadPdf').addEventListener('click', generatePDF);
+            document.getElementById('btnReviewAnswers').addEventListener('click', openReviewModal);
+            document.getElementById('btnCloseReview').addEventListener('click', closeReviewModal);
+            document.getElementById('btnCloseReviewFooter').addEventListener('click', closeReviewModal);
+            document.getElementById('btnRestart').addEventListener('click', resetGame);
+
+            canvas.addEventListener('click', handleCanvasClick);
+        });
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = 480;
+        }
+
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            const newArr = [...array];
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [newArr[currentIndex], newArr[randomIndex]] = [newArr[randomIndex], newArr[currentIndex]];
+            }
+            return newArr;
+        }
+
+        // --- GAME CONTROLLER ---
+        function startGame() {
+            const inputVal = studentNameInput.value.trim();
+            if (!inputVal) {
+                nameError.classList.remove('hidden');
+                studentNameInput.focus();
+                return;
+            }
+
+            soundFX.init();
+            nameError.classList.add('hidden');
+            studentName = inputVal;
+            hudStudentName.textContent = studentName;
+
+            // Load all 20 questions in randomized order
+            currentQuestions = shuffle([...questionBank]);
+            currentQuestionIndex = 0;
+            score = 0;
+            totalAttempts = 0;
+            userResponses = [];
+
+            // UI Switch
+            startScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            gameScreen.classList.add('flex');
+
+            resizeCanvas();
+            loadQuestion();
+            gameLoop();
+        }
+
+        function loadQuestion() {
+            if (currentQuestionIndex >= currentQuestions.length) {
+                finishGame();
+                return;
+            }
+
+            const q = currentQuestions[currentQuestionIndex];
+            questionText.textContent = q.question;
+            scoreDisplay.textContent = score;
+            progressDisplay.textContent = `${currentQuestionIndex + 1} / ${currentQuestions.length}`;
+
+            spawnDrones(q);
+        }
+
+        // --- SHOOTING & HIT DETECTION ---
+        function handleCanvasClick(e) {
+            soundFX.playLaser();
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            const cannonX = canvas.width / 2;
+            const cannonY = canvas.height - 20;
+
+            lasers.push({
+                x1: cannonX,
+                y1: cannonY,
+                x2: clickX,
+                y2: clickY,
+                alpha: 1.0
+            });
+
+            for (let i = drones.length - 1; i >= 0; i--) {
+                const d = drones[i];
+                if (clickX >= d.x && clickX <= d.x + d.width &&
+                    clickY >= d.y && clickY <= d.y + d.height) {
+                    
+                    totalAttempts++;
+                    const currentQ = currentQuestions[currentQuestionIndex];
+
+                    userResponses.push({
+                        questionNum: currentQuestionIndex + 1,
+                        question: currentQ.question,
+                        selected: d.text,
+                        correct: currentQ.correct,
+                        isCorrect: d.isCorrect,
+                        explanation: currentQ.explanation
+                    });
+
+                    createExplosion(d.x + d.width / 2, d.y + d.height / 2, d.isCorrect ? '#34d399' : '#f87171');
+
+                    if (d.isCorrect) {
+                        soundFX.playCorrect();
+                        score += 100;
+                        showToast("CORRECT TARGET DESTROYED! +100", "#059669");
+                    } else {
+                        soundFX.playWrong();
+                        score = Math.max(0, score - 30);
+                        showToast(`INCORRECT! Correct: ${currentQ.correct}`, "#dc2626");
+                    }
+
+                    currentQuestionIndex++;
+                    setTimeout(() => {
+                        loadQuestion();
+                    }, 400);
+
+                    break;
+                }
+            }
+        }
+
+        function spawnDrones(questionObj) {
+            drones = [];
+            const options = shuffle([...questionObj.options]);
+            const droneWidth = 140;
+            const droneHeight = 65;
+
+            // Distribute drones evenly across canvas width with random initial velocities
+            const sectionWidth = canvas.width / options.length;
+
+            options.forEach((optText, index) => {
+                const x = (sectionWidth * index) + (sectionWidth / 2) - (droneWidth / 2);
+                const y = Math.random() * 100 + 40; // Spanning top area
+
+                drones.push({
+                    text: optText,
+                    isCorrect: optText === questionObj.correct,
+                    x: Math.max(10, Math.min(canvas.width - droneWidth - 10, x)),
+                    y: y,
+                    width: droneWidth,
+                    height: droneHeight,
+                    vx: (Math.random() - 0.5) * 1.8 || 1,
+                    vy: (Math.random() - 0.5) * 1.2 || 0.8,
+                    rotorAngle: Math.random() * Math.PI
+                });
+            });
+        }
+
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 25; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    radius: Math.random() * 3 + 2,
+                    color: color,
+                    alpha: 1.0,
+                    decay: Math.random() * 0.03 + 0.015
+                });
+            }
+        }
+
+        function showToast(message, bgColor) {
+            feedbackToast.textContent = message;
+            feedbackToast.style.background = bgColor;
+            feedbackToast.style.color = "#ffffff";
+            feedbackToast.style.opacity = "1";
+            
+            setTimeout(() => {
+                feedbackToast.style.opacity = "0";
+            }, 1800);
+        }
+
+        // --- GAME LOOP & RENDERING ---
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawBackgroundGrid();
+            drawCannon();
+            updateAndDrawLasers();
+            updateAndDrawDrones();
+            updateAndDrawParticles();
+
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function drawBackgroundGrid() {
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.04)';
+            ctx.lineWidth = 1;
+            const gridSize = 40;
+
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawCannon() {
+            const centerX = canvas.width / 2;
+            const bottomY = canvas.height;
+
+            ctx.fillStyle = '#1e293b';
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(centerX, bottomY, 40, Math.PI, 0, false);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath();
+            ctx.arc(centerX, bottomY - 15, 8, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function updateAndDrawDrones() {
+            drones.forEach(d => {
+                d.x += d.vx;
+                d.y += d.vy;
+                d.rotorAngle += 0.2;
+
+                if (d.x <= 10 || d.x + d.width >= canvas.width - 10) d.vx *= -1;
+                if (d.y <= 20 || d.y + d.height >= canvas.height - 180) d.vy *= -1;
+
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.strokeStyle = '#0284c7';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(d.x, d.y, d.width, d.height, 10);
+                ctx.fill();
+                ctx.stroke();
+
+                drawRotor(d.x + 10, d.y + 5, d.rotorAngle);
+                drawRotor(d.x + d.width - 10, d.y + 5, d.rotorAngle);
+                drawRotor(d.x + 10, d.y + d.height - 5, d.rotorAngle);
+                drawRotor(d.x + d.width - 10, d.y + d.height - 5, d.rotorAngle);
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+                ctx.arc(d.x + d.width / 2, d.y + 12, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#f0f6fc';
+                ctx.font = 'bold 12px "Rajdhani", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                wrapText(ctx, d.text, d.x + d.width / 2, d.y + d.height / 2 + 5, d.width - 16, 14);
+            });
+        }
+
+        function drawRotor(x, y, angle) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-10, 0);
+            ctx.lineTo(10, 0);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function updateAndDrawLasers() {
+            for (let i = lasers.length - 1; i >= 0; i--) {
+                const l = lasers[i];
+                ctx.strokeStyle = `rgba(56, 189, 248, ${l.alpha})`;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(l.x1, l.y1);
+                ctx.lineTo(l.x2, l.y2);
+                ctx.stroke();
+
+                l.alpha -= 0.1;
+                if (l.alpha <= 0) {
+                    lasers.splice(i, 1);
+                }
+            }
+        }
+
+        function updateAndDrawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        function wrapText(context, text, x, y, maxWidth, lineHeight) {
+            const words = text.split(' ');
+            let line = '';
+            let lines = [];
+
+            for (let n = 0; n < words.length; n++) {
+                let testLine = line + words[n] + ' ';
+                let metrics = context.measureText(testLine);
+                let testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    lines.push(line);
+                    line = words[n] + ' ';
+                } else {
+                    line = testLine;
+                }
+            }
+            lines.push(line);
+
+            let startY = y - ((lines.length - 1) * lineHeight) / 2;
+            for (let k = 0; k < lines.length; k++) {
+                context.fillText(lines[k].trim(), x, startY + (k * lineHeight));
+            }
+        }
+
+        // --- GAME OVER & REVIEW ---
+        function finishGame() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+            soundFX.playWin();
+            gameScreen.classList.add('hidden');
+            gameScreen.classList.remove('flex');
+            endScreen.classList.remove('hidden');
+
+            const correctCount = userResponses.filter(r => r.isCorrect).length;
+            const accuracy = Math.round((correctCount / currentQuestions.length) * 100);
+
+            document.getElementById('finalStudentName').textContent = studentName;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalAccuracy').textContent = `${accuracy}%`;
+            document.getElementById('finalQuestions').textContent = `${correctCount}/${currentQuestions.length}`;
+        }
+
+        function openReviewModal() {
+            const reviewList = document.getElementById('reviewList');
+            reviewList.innerHTML = '';
+
+            userResponses.forEach((res, idx) => {
+                const card = document.createElement('div');
+                card.style.padding = '1rem';
+                card.style.borderRadius = '10px';
+                card.style.border = `1px solid ${res.isCorrect ? 'rgba(52, 211, 153, 0.4)' : 'rgba(248, 113, 113, 0.4)'}`;
+                card.style.background = res.isCorrect ? 'rgba(6, 78, 59, 0.2)' : 'rgba(127, 29, 29, 0.2)';
+                card.style.display = 'flex';
+                card.style.flexDirection = 'column';
+                card.style.gap = '0.4rem';
+
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="font-orbitron" style="font-size: 0.8rem; font-weight: bold; color: ${res.isCorrect ? '#34d399' : '#f87171'};">
+                            Q${idx + 1}. ${res.isCorrect ? '<i class="fa-solid fa-circle-check"></i> CORRECT' : '<i class="fa-solid fa-circle-xmark"></i> INCORRECT'}
+                        </span>
+                        <span style="font-size: 0.75rem; color: #8b949e;">TOPIC 3.3</span>
+                    </div>
+                    <p style="font-size: 0.95rem; font-weight: 600; color: #ffffff;">${res.question}</p>
+                    <div style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.2rem;">
+                        <p style="color: #cbd5e1;">Your Choice: <span style="font-weight: bold; color: ${res.isCorrect ? '#6ee7b7' : '#fca5a5'};">${res.selected}</span></p>
+                        ${!res.isCorrect ? `<p style="color: #34d399;">Correct Target: <span style="font-weight: bold;">${res.correct}</span></p>` : ''}
+                    </div>
+                    <div style="padding-top: 0.4rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.8rem; color: #94a3b8; font-style: italic;">
+                        <i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i> ${res.explanation}
+                    </div>
+                `;
+                reviewList.appendChild(card);
+            });
+
+            reviewModal.classList.remove('hidden');
+        }
+
+        function closeReviewModal() {
+            reviewModal.classList.add('hidden');
+        }
+
+        function resetGame() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            endScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            studentNameInput.value = '';
+        }
+
+        // --- SINGLE PAGE PDF CERTIFICATE GENERATION ---
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            
+            // Standard A4 Landscape Dimensions
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const correctCount = userResponses.filter(r => r.isCorrect).length;
+            const accuracy = Math.round((correctCount / currentQuestions.length) * 100);
+            const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            // 1. Clean Pure White Background
+            doc.setFillColor(255, 255, 255);
+            doc.rect(0, 0, 297, 210, 'F');
+
+            // 2. Outer Dual Border Lines (Cyan & Deep Blue Accent)
+            doc.setDrawColor(2, 132, 199); // Bright Blue/Cyan Accent
+            doc.setLineWidth(1.8);
+            doc.rect(10, 10, 277, 190);
+
+            doc.setDrawColor(15, 23, 42); // Deep Navy Outer Line
+            doc.setLineWidth(0.6);
+            doc.rect(13, 13, 271, 184);
+
+            // Inner Frame Line
+            doc.setDrawColor(203, 213, 225);
+            doc.setLineWidth(0.4);
+            doc.rect(16, 16, 265, 178);
+
+            // 3. Header Section
+            // Top Small Header
+            doc.setTextColor(2, 132, 199);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.text("INTERNATIONAL BACCALAUREATE DIPLOMA PROGRAMME", 148, 32, { align: "center" });
+
+            // Main Title
+            doc.setTextColor(15, 23, 42);
+            doc.setFontSize(26);
+            doc.text("CERTIFICATE OF ACHIEVEMENT", 148, 44, { align: "center" });
+
+            // Subtitle Topic
+            doc.setTextColor(71, 85, 105);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.text("DIGITAL SOCIETY — TOPIC 3.3: COMPUTING DEVICES", 148, 53, { align: "center" });
+
+            // Cyan Horizontal Divider
+            doc.setDrawColor(2, 132, 199);
+            doc.setLineWidth(1.2);
+            doc.line(108, 59, 188, 59);
+
+            // 4. Certification Context
+            doc.setTextColor(51, 65, 85);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.text("This official certificate certifies that", 148, 72, { align: "center" });
+
+            // Student Name (Prominent Cyan)
+            doc.setTextColor(2, 132, 199);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(28);
+            doc.text(studentName.toUpperCase(), 148, 88, { align: "center" });
+
+            // Completion Sentence
+            doc.setTextColor(51, 65, 85);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.text("has successfully completed the interactive assessment with a final score of", 148, 103, { align: "center" });
+
+            // 5. Score Highlight Box (Green Border & Light Tint)
+            doc.setFillColor(240, 253, 244); // Soft Light Green Background
+            doc.setDrawColor(16, 185, 129); // Emerald Green Border
+            doc.setLineWidth(1.2);
+            doc.roundedRect(93, 112, 111, 24, 6, 6, 'FD');
+
+            doc.setTextColor(5, 150, 105); // Green Text
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(14);
+            doc.text(`${correctCount} / ${currentQuestions.length} Questions Correct (${accuracy}%)`, 148, 127, { align: "center" });
+
+            // Description Paragraph
+            doc.setTextColor(100, 116, 139);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9.5);
+            doc.text("Demonstrating core proficiency in hardware architecture, evolution of computing, software systems,", 148, 145, { align: "center" });
+            doc.text("user interfaces, and modern computing device paradigms.", 148, 150, { align: "center" });
+
+            // 6. Footer Signature & Seal Section
+            // Left Signature - Teacher Fara
+            doc.setDrawColor(148, 163, 184);
+            doc.setLineWidth(0.8);
+            doc.line(39, 181, 100, 181);
+
+            doc.setTextColor(15, 23, 42);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.text("Teacher Fara", 69.5, 188, { align: "center" });
+
+            doc.setTextColor(100, 116, 139);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.text("Course Instructor & Author", 69.5, 193, { align: "center" });
+
+            // Center Badge / Seal ("OFFICIAL VERIFIED")
+            doc.setFillColor(248, 250, 252);
+            doc.setDrawColor(2, 132, 199);
+            doc.setLineWidth(1.2);
+            doc.circle(148, 179, 14, 'FD');
+
+            doc.setTextColor(2, 132, 199);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8);
+            doc.text("OFFICIAL", 148, 177.5, { align: "center" });
+            doc.text("VERIFIED", 148, 181.5, { align: "center" });
+
+            // Right Line - Date
+            doc.setDrawColor(2, 132, 199);
+            doc.setLineWidth(0.8);
+            doc.line(197, 181, 258, 181);
+
+            doc.setTextColor(15, 23, 42);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.text(`${dateStr}`, 227.5, 188, { align: "center" });
+
+            doc.setTextColor(100, 116, 139);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.text("Date of Issue", 227.5, 193, { align: "center" });
+
+            // Download PDF Document
+            const fileName = `Certificate_IB_DigitalSociety_${studentName.replace(/\s+/g, '_')}.pdf`;
+            doc.save(fileName);
+        }
+    </script>
+</body>
+</html>
